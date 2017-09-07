@@ -330,3 +330,23 @@ const logError = error => console.warn("Whoops! Error:", error);
 Ok - up to this point we have a user's video on the screen. When they press "Join Session", they initiate a connection to Action Cable
 
 let's jump into our `received` function and write a switch statement to handle the different types of data that we'll be receiving.
+
+
+
+## Deployment
+
+Make sure you add the `redis` gem:
+
+```ruby
+#Gemfile
+gem 'redis', '~> 3.0'
+```
+
+Then
+
+```
+$ bundle install
+$ heroku create
+$ heroku addons:create redistogo
+$ heroku config | grep REDISTOGO_URL
+```
