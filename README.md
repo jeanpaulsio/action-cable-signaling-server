@@ -350,3 +350,24 @@ $ heroku create
 $ heroku addons:create redistogo
 $ heroku config | grep REDISTOGO_URL
 ```
+
+```yaml
+# config/cable.yml
+
+production:
+  adapter: redis
+  url: ${REDISTOGO_URL}
+```
+
+```ruby
+# config/environments/production.rb
+
+config.action_cable.url = 'wss://yourapp.herokuapp.com/cable'
+config.action_cable.allowed_request_origins = [ '*' ]
+```
+
+```
+$ git add .
+$ git commit -m 'ready to ship'
+$ git push heroku master
+```
