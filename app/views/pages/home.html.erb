@@ -1,0 +1,14 @@
+<div>Random user id: <span id="currentUser"><%= @random_number %></span></div>
+<h1>Action Cable + WebRTC + Xirsys</h1>
+
+<video id="selfView" autoplay></video>
+<div id="remoteViewContainer"></div>
+
+<button onclick="handleJoinSession()">Join Session</button>
+<button onclick="handleLeaveSession()">Leave Session</button>
+
+<% content_for :page_js do %>
+  <script type="text/javascript">
+    <%= render file: "#{Rails.root}/app/views/pages/js/webrtc.js" %>
+  </script>
+<% end %>
