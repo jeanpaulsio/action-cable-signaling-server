@@ -1,6 +1,7 @@
 const INITIATE_CONNECTION = "initiateConnection";
 const ROLLCALL = "rollcall";
 const EXCHANGE = "exchange";
+const REMOVE_USER = "removeUser"
 
 const currentUser = document.getElementById("currentUser").innerHTML;
 const selfView = document.getElementById("selfView");
@@ -29,6 +30,7 @@ const rollcall = data => {
 
   if (!currentUsersInRoom[currentUser]) {
     createPC(currentUser, true);
+    console.log("sending offer from currentUser", currentUser)
   }
 };
 
@@ -62,6 +64,7 @@ const createPC = (userId, isOffer) => {
   };
 
   pc.onaddstream = event => {
+    console.log("adding stream")
     const element = document.createElement("video");
     element.id = "remoteView";
     element.autoplay = "autoplay";
@@ -73,6 +76,8 @@ const createPC = (userId, isOffer) => {
 };
 
 const exchange = data => {
+  console.log("exchanging data with:", data.from)
+
   let pc;
 
   if (!pcPeers[currentUser]) {
@@ -124,12 +129,35 @@ const handleJoinSession = async () => {
           return rollcall(data);
         case EXCHANGE:
           return data.from === currentUser ? "" : exchange(data);
+        case REMOVE_USER:
+          return removeUser(data);
         default:
           return;
       }
     }
   });
 };
+
+const handleLeaveSession = () => {
+  let pc = pcPeers[currentUser];
+  if (pc) pc.close();
+
+  broadcastData({
+    type: REMOVE_USER,
+    from: currentUser
+  });
+
+  // removeUser();
+  let video = document.getElementById("remoteView");
+  if (video) video.remove();
+  location.reload();
+}
+
+removeUser = (data) => {
+  let video = document.getElementById("remoteView");
+  if (video) video.remove();
+  location.reload();
+}
 
 const broadcastData = data => {
   $.ajax({
@@ -151,8 +179,8 @@ const initialize = () => {
       audio: false,
       video: {
         width: 320,
-        height: 240
-      }
+        height: 240,
+      },
     })
     .then(stream => {
       localStream = stream;
