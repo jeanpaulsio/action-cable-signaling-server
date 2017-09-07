@@ -261,6 +261,72 @@ Just a little more setup, let's grab some stuff from the DOM and set up a config
 const selfView = document.getElementById("selfView");
 const remoteViewContainer = document.getElementById("remoteViewContainer");
 const configuration = { iceServers: [{ url: "stun:stun.l.google.com:19302" }] };
+
+let pcPeers = {};
+let usersInRoom = {};
+let localStream;
 ```
 
-We are just grabbing the elements that will hold local and remote views 
+We are just grabbing the elements that will hold local and remote views
+
+We are also instantiating a couple of empty objects that will hold the users in the room
+
+`localStream` will hold the current users's stream... which we'll grab now! Inside of our `initialize` function, we'll call `navigator.mediaDevices.getUserMedia` and set the stream to `localStream`
+
+Our `webrtc.js` should look like this now:
+
+```js
+const currentUser = document.getElementById("currentUser").innerHTML;
+const selfView = document.getElementById("selfView");
+const remoteViewContainer = document.getElementById("remoteViewContainer");
+const configuration = { iceServers: [{ url: "stun:stun.l.google.com:19302" }] };
+
+const handleJoinSession = async () => {
+  App.session = await App.cable.subscriptions.create("SessionChannel", {
+    connected: () => {
+      broadcastData({ type: "initiateConnection" });
+    },
+    received: data => {
+      console.log("RECEIVED:", data);
+    }
+  });
+};
+
+const broadcastData = data => {
+  $.ajax({
+    url: "sessions",
+    type: "post",
+    data,
+    success: () => {},
+    error: () => {}
+  });
+};
+
+window.onload = () => {
+  initialize();
+};
+
+const initialize = () => {
+  navigator.mediaDevices
+  .getUserMedia({
+    audio: false,
+    video: {
+      width: 320,
+      height: 240
+    }
+  })
+  .then(stream => {
+    localStream = stream;
+    selfView.src = URL.createObjectURL(stream);
+    selfView.muted = true;
+  })
+  .catch(logError);
+};
+
+const logSuccess = () => {}
+const logError = error => console.warn("Whoops! Error:", error);
+```
+
+Ok - up to this point we have a user's video on the screen. When they press "Join Session", they initiate a connection to Action Cable
+
+let's jump into our `received` function and write a switch statement to handle the different types of data that we'll be receiving.
