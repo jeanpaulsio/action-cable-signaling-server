@@ -115,6 +115,27 @@ const exchange = data => {
   }
 };
 
+const handleLeaveSession = () => {
+  let pc = pcPeers[currentUser];
+  if (pc) pc.close();
+
+  broadcastData({
+    type: REMOVE_USER,
+    from: currentUser
+  });
+
+  // removeUser();
+  let video = document.getElementById("remoteView");
+  if (video) video.remove();
+  location.reload();
+}
+
+const removeUser = (data) => {
+  let video = document.getElementById("remoteView");
+  if (video) video.remove();
+  location.reload();
+}
+
 const handleJoinSession = async () => {
   App.session = await App.cable.subscriptions.create("SessionChannel", {
     connected: () => {
@@ -137,27 +158,6 @@ const handleJoinSession = async () => {
     }
   });
 };
-
-const handleLeaveSession = () => {
-  let pc = pcPeers[currentUser];
-  if (pc) pc.close();
-
-  broadcastData({
-    type: REMOVE_USER,
-    from: currentUser
-  });
-
-  // removeUser();
-  let video = document.getElementById("remoteView");
-  if (video) video.remove();
-  location.reload();
-}
-
-removeUser = (data) => {
-  let video = document.getElementById("remoteView");
-  if (video) video.remove();
-  location.reload();
-}
 
 const broadcastData = data => {
   $.ajax({
