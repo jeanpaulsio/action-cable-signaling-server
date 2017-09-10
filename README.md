@@ -316,11 +316,8 @@ window.onload = () => {
 const initialize = () => {
   navigator.mediaDevices
   .getUserMedia({
-    audio: false,
-    video: {
-      width: 320,
-      height: 240
-    }
+    audio: true,
+    video: true
   })
   .then(stream => {
     localStream = stream;
