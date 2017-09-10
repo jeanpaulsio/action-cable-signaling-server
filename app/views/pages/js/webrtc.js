@@ -178,8 +178,8 @@ const initialize = () => {
     .getUserMedia({
       audio: false,
       video: {
-        width: 320,
-        height: 240,
+        width: 1280,
+        height: 720,
       },
     })
     .then(stream => {
