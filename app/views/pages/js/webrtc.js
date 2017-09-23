@@ -80,9 +80,16 @@ const createPC = (userId, isOffer) => {
     const element = document.createElement("video");
     element.id = "remoteView";
     element.autoplay = "autoplay";
-    element.src = URL.createObjectURL(event.stream);
+    element.srcObject = event.stream;
     remoteViewContainer.appendChild(element);
   };
+
+  // this can tell when a user disconnects
+  pc.oniceconnectionstatechange = event =>
+    console.log("oniceconnectionstatechange", event.target.iceConnectionState);
+
+  pc.onsignalingstatechange = event =>
+    console.log("onsignalingstatechange", event);
 
   return pc;
 };
@@ -99,12 +106,7 @@ const exchange = data => {
   }
 
   if (data.candidate) {
-    let candidate = new RTCIceCandidate(JSON.parse(data.candidate));
-
-    pc
-      .addIceCandidate(candidate)
-      .then(logSuccess)
-      .catch(logError);
+    pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)));
   }
 
   if (data.sdp) {
@@ -190,7 +192,7 @@ const initialize = () => {
     .getUserMedia(videoConstraints)
     .then(stream => {
       localStream = stream;
-      selfView.src = URL.createObjectURL(stream);
+      selfView.srcObject = stream;
       selfView.muted = true;
     })
     .catch(logError);
