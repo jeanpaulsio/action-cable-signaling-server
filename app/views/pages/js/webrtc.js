@@ -1,13 +1,25 @@
+// BROADCAST TYPES
 const INITIATE_CONNECTION = "initiateConnection";
 const ROLLCALL = "rollcall";
 const EXCHANGE = "exchange";
-const REMOVE_USER = "removeUser"
+const REMOVE_USER = "removeUser";
 
+// DOM ELEMENTS
 const currentUser = document.getElementById("currentUser").innerHTML;
 const selfView = document.getElementById("selfView");
 const remoteViewContainer = document.getElementById("remoteViewContainer");
-const configuration = { iceServers: [{ url: "stun:stun.l.google.com:19302" }] };
 
+// CONFIG
+const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const videoConstraints = {
+  audio: false,
+  video: {
+    width: 480,
+    height: 360
+  }
+};
+
+// GLOBAL OBJECTS
 let pcPeers = {};
 let usersInRoom = {};
 let localStream;
@@ -30,12 +42,12 @@ const rollcall = data => {
 
   if (!currentUsersInRoom[currentUser]) {
     createPC(currentUser, true);
-    console.log("sending offer from currentUser", currentUser)
+    console.log("sending offer from currentUser", currentUser);
   }
 };
 
 const createPC = (userId, isOffer) => {
-  let pc = new RTCPeerConnection(configuration);
+  let pc = new RTCPeerConnection(ice);
   pcPeers[userId] = pc;
   pc.addStream(localStream);
   pc.onnegotiationneeded = () => isOffer && createOffer();
@@ -64,7 +76,7 @@ const createPC = (userId, isOffer) => {
   };
 
   pc.onaddstream = event => {
-    console.log("adding stream")
+    console.log("adding stream");
     const element = document.createElement("video");
     element.id = "remoteView";
     element.autoplay = "autoplay";
@@ -76,7 +88,7 @@ const createPC = (userId, isOffer) => {
 };
 
 const exchange = data => {
-  console.log("exchanging data with:", data.from)
+  console.log("exchanging data with:", data.from);
 
   let pc;
 
@@ -128,13 +140,13 @@ const handleLeaveSession = () => {
   let video = document.getElementById("remoteView");
   if (video) video.remove();
   location.reload();
-}
+};
 
-const removeUser = (data) => {
+const removeUser = data => {
   let video = document.getElementById("remoteView");
   if (video) video.remove();
   location.reload();
-}
+};
 
 const handleJoinSession = async () => {
   App.session = await App.cable.subscriptions.create("SessionChannel", {
@@ -175,10 +187,7 @@ window.onload = () => {
 
 const initialize = () => {
   navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true,
-    })
+    .getUserMedia(videoConstraints)
     .then(stream => {
       localStream = stream;
       selfView.src = URL.createObjectURL(stream);
