@@ -22,6 +22,7 @@ const videoConstraints = {
 // GLOBAL OBJECTS
 let pcPeers = {};
 let usersInRoom = {};
+let peersToConnect = {};
 let localStream;
 
 const initiateConnection = () => {
@@ -41,12 +42,15 @@ const rollcall = data => {
   if (isOnlyUser) return;
 
   if (!currentUsersInRoom[currentUser]) {
+    console.log(`User ${currentUser} will send an offer`)
     createPC(currentUser, true);
-    console.log("sending offer from currentUser", currentUser);
   }
 };
 
+
 const createPC = (userId, isOffer) => {
+  console.log("adding pcPeers userId", userId, "to user", currentUser)
+
   let pc = new RTCPeerConnection(ice);
   pcPeers[userId] = pc;
   pc.addStream(localStream);
@@ -84,7 +88,7 @@ const createPC = (userId, isOffer) => {
     remoteViewContainer.appendChild(element);
   };
 
-  // this can tell when a user disconnects
+  // TODO: this can tell when a user disconnects
   pc.oniceconnectionstatechange = event =>
     console.log("oniceconnectionstatechange", event.target.iceConnectionState);
 
@@ -138,7 +142,6 @@ const handleLeaveSession = () => {
     from: currentUser
   });
 
-  // removeUser();
   let video = document.getElementById("remoteView");
   if (video) video.remove();
   location.reload();
@@ -156,7 +159,7 @@ const handleJoinSession = async () => {
       broadcastData({ type: INITIATE_CONNECTION });
     },
     received: data => {
-      console.log("RECEIVED:", data);
+      // console.log("RECEIVED:", data);
       switch (data.type) {
         case INITIATE_CONNECTION:
           return initiateConnection();
