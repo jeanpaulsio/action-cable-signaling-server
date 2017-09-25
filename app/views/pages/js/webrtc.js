@@ -1,98 +1,151 @@
-const INITIATE_CONNECTION = "initiateConnection";
-const ROLLCALL = "rollcall";
-const EXCHANGE = "exchange";
-const REMOVE_USER = "removeUser"
+// BROADCAST TYPES
+const JOIN_ROOM = "JOIN_ROOM";
+const ROLLCALL = "ROLLCALL";
+const EXCHANGE = "EXCHANGE";
+const REMOVE_USER = "REMOVE_USER";
 
+// DOM ELEMENTS
 const currentUser = document.getElementById("currentUser").innerHTML;
 const selfView = document.getElementById("selfView");
 const remoteViewContainer = document.getElementById("remoteViewContainer");
-const configuration = { iceServers: [{ url: "stun:stun.l.google.com:19302" }] };
 
+// CONFIG
+const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const constraints = {
+  audio: false,
+  video: { width: 240, height: 180 }
+};
+
+// GLOBAL OBJECTS
 let pcPeers = {};
 let usersInRoom = {};
 let localStream;
 
-const initiateConnection = () => {
-  broadcastData({
-    type: ROLLCALL,
-    from: currentUser,
-    usersInRoom: JSON.stringify(usersInRoom)
+// Window Events
+window.onload = () => {
+  initialize();
+};
+
+const initialize = () => {
+  navigator.mediaDevices
+    .getUserMedia(constraints)
+    .then(stream => {
+      localStream = stream;
+      selfView.srcObject = stream;
+      selfView.muted = true;
+    })
+    .catch(logError);
+};
+
+const handleJoinSession = async () => {
+  App.session = await App.cable.subscriptions.create("SessionChannel", {
+    connected: () => connectUser(currentUser),
+    received: data => {
+      if (data.from === currentUser) return;
+      console.log("RECEIVED:", data);
+      switch (data.type) {
+        case JOIN_ROOM:
+          return joinRoom(data);
+        case EXCHANGE:
+          return exchange(data);
+        case REMOVE_USER:
+          return removeUser(data);
+        default:
+          return;
+      }
+    }
   });
 };
 
-const rollcall = data => {
-  usersInRoom[data.from] = true;
+const handleLeaveSession = () => {
+  let pc = pcPeers[currentUser];
+  pc && pc.close();
 
-  currentUsersInRoom = JSON.parse(data.usersInRoom);
-  isOnlyUser = Object.keys(currentUsersInRoom).length === 0;
+  broadcastData({
+    type: REMOVE_USER,
+    from: currentUser
+  });
 
-  if (isOnlyUser) return;
+  location.reload();
+};
 
-  if (!currentUsersInRoom[currentUser]) {
-    createPC(currentUser, true);
-    console.log("sending offer from currentUser", currentUser)
-  }
+const connectUser = userId => {
+  broadcastData({
+    type: JOIN_ROOM,
+    from: currentUser
+  });
+};
+
+const joinRoom = data => {
+  createPC(data.from, true);
+};
+
+const removeUser = data => {
+  let video = document.getElementById(`remoteView+${data.from}`);
+  video && video.remove();
+  delete pcPeers[data.from];
 };
 
 const createPC = (userId, isOffer) => {
-  let pc = new RTCPeerConnection(configuration);
+  console.log("createPC", userId);
+  let pc = new RTCPeerConnection(ice);
   pcPeers[userId] = pc;
   pc.addStream(localStream);
-  pc.onnegotiationneeded = () => isOffer && createOffer();
 
-  const createOffer = () => {
+  isOffer &&
     pc
       .createOffer()
       .then(offer => {
         pc.setLocalDescription(offer);
         broadcastData({
           type: EXCHANGE,
-          from: userId,
+          from: currentUser,
           sdp: JSON.stringify(pc.localDescription)
         });
       })
       .catch(logError);
-  };
 
   pc.onicecandidate = event => {
     event.candidate &&
       broadcastData({
         type: EXCHANGE,
-        from: userId,
+        from: currentUser,
         candidate: JSON.stringify(event.candidate)
       });
   };
 
   pc.onaddstream = event => {
-    console.log("adding stream")
     const element = document.createElement("video");
-    element.id = "remoteView";
+    element.id = `remoteView+${userId}`;
     element.autoplay = "autoplay";
-    element.src = URL.createObjectURL(event.stream);
+    element.srcObject = event.stream;
     remoteViewContainer.appendChild(element);
+  };
+
+  pc.oniceconnectionstatechange = event => {
+    if (pc.iceConnectionState == "disconnected") {
+      console.log("Disconnected:", userId);
+      broadcastData({
+        type: REMOVE_USER,
+        from: userId
+      });
+    }
   };
 
   return pc;
 };
 
 const exchange = data => {
-  console.log("exchanging data with:", data.from)
-
   let pc;
 
-  if (!pcPeers[currentUser]) {
-    pc = createPC(currentUser, false);
+  if (!pcPeers[data.from]) {
+    pc = createPC(data.from, false);
   } else {
-    pc = pcPeers[currentUser];
+    pc = pcPeers[data.from];
   }
 
   if (data.candidate) {
-    let candidate = new RTCIceCandidate(JSON.parse(data.candidate));
-
-    pc
-      .addIceCandidate(candidate)
-      .then(logSuccess)
-      .catch(logError);
+    pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)));
   }
 
   if (data.sdp) {
@@ -104,7 +157,7 @@ const exchange = data => {
           pc.createAnswer().then(answer => {
             pc.setLocalDescription(answer);
             broadcastData({
-              type: "exchange",
+              type: EXCHANGE,
               from: currentUser,
               sdp: JSON.stringify(pc.localDescription)
             });
@@ -115,77 +168,12 @@ const exchange = data => {
   }
 };
 
-const handleLeaveSession = () => {
-  let pc = pcPeers[currentUser];
-  if (pc) pc.close();
-
-  broadcastData({
-    type: REMOVE_USER,
-    from: currentUser
-  });
-
-  // removeUser();
-  let video = document.getElementById("remoteView");
-  if (video) video.remove();
-  location.reload();
-}
-
-const removeUser = (data) => {
-  let video = document.getElementById("remoteView");
-  if (video) video.remove();
-  location.reload();
-}
-
-const handleJoinSession = async () => {
-  App.session = await App.cable.subscriptions.create("SessionChannel", {
-    connected: () => {
-      broadcastData({ type: INITIATE_CONNECTION });
-    },
-    received: data => {
-      console.log("RECEIVED:", data);
-      switch (data.type) {
-        case INITIATE_CONNECTION:
-          return initiateConnection();
-        case ROLLCALL:
-          return rollcall(data);
-        case EXCHANGE:
-          return data.from === currentUser ? "" : exchange(data);
-        case REMOVE_USER:
-          return removeUser(data);
-        default:
-          return;
-      }
-    }
-  });
-};
-
 const broadcastData = data => {
   $.ajax({
     url: "sessions",
     type: "post",
-    data,
-    success: () => {},
-    error: () => {}
+    data
   });
 };
 
-window.onload = () => {
-  initialize();
-};
-
-const initialize = () => {
-  navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true,
-    })
-    .then(stream => {
-      localStream = stream;
-      selfView.src = URL.createObjectURL(stream);
-      selfView.muted = true;
-    })
-    .catch(logError);
-};
-
-const logSuccess = () => {};
 const logError = error => console.warn("Whoops! Error:", error);
