@@ -42,11 +42,12 @@ const handleJoinSession = async () => {
     connected: () => connectUser(currentUser),
     received: data => {
       if (data.from === currentUser) return;
-      console.log("RECEIVED:", data);
       switch (data.type) {
         case JOIN_ROOM:
           return joinRoom(data);
         case EXCHANGE:
+          data.sdp && console.log("received", data)
+          if (data.to !== currentUser) return;
           return exchange(data);
         case REMOVE_USER:
           return removeUser(data);
@@ -66,7 +67,7 @@ const handleLeaveSession = () => {
     from: currentUser
   });
 
-  location.reload();
+  location.reload()
 };
 
 const connectUser = userId => {
@@ -87,7 +88,6 @@ const removeUser = data => {
 };
 
 const createPC = (userId, isOffer) => {
-  console.log("createPC", userId);
   let pc = new RTCPeerConnection(ice);
   pcPeers[userId] = pc;
   pc.addStream(localStream);
@@ -100,6 +100,7 @@ const createPC = (userId, isOffer) => {
         broadcastData({
           type: EXCHANGE,
           from: currentUser,
+          to: userId,
           sdp: JSON.stringify(pc.localDescription)
         });
       })
@@ -110,6 +111,7 @@ const createPC = (userId, isOffer) => {
       broadcastData({
         type: EXCHANGE,
         from: currentUser,
+        to: userId,
         candidate: JSON.stringify(event.candidate)
       });
   };
@@ -127,7 +129,8 @@ const createPC = (userId, isOffer) => {
       console.log("Disconnected:", userId);
       broadcastData({
         type: REMOVE_USER,
-        from: userId
+        from: currentUser,
+        to: userId
       });
     }
   };
@@ -159,6 +162,7 @@ const exchange = data => {
             broadcastData({
               type: EXCHANGE,
               from: currentUser,
+              to: data.from,
               sdp: JSON.stringify(pc.localDescription)
             });
           });
