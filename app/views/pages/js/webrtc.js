@@ -150,7 +150,10 @@ const exchange = data => {
   }
 
   if (data.candidate) {
-    pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)));
+    pc
+      .addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)))
+      .then(() => console.log("Ice candidate added"))
+      .catch(logError);
   }
 
   if (data.sdp) {
