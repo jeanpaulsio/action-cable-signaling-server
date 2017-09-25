@@ -40,7 +40,7 @@ const handleJoinSession = async () => {
   App.session = await App.cable.subscriptions.create("SessionChannel", {
     connected: () => connectUser(currentUser),
     received: data => {
-      console.log('received', data)
+      console.log("received", data);
       if (data.from === currentUser) return;
       switch (data.type) {
         case JOIN_ROOM:
@@ -58,15 +58,19 @@ const handleJoinSession = async () => {
 };
 
 const handleLeaveSession = () => {
-  let pc = pcPeers[currentUser];
-  pc && pc.close();
+  for (user in pcPeers) {
+    pcPeers[user].close();
+  }
+  pcPeers = {};
+
+  App.session.unsubscribe();
+
+  remoteViewContainer.innerHTML = "";
 
   broadcastData({
     type: REMOVE_USER,
     from: currentUser
   });
-
-  location.reload()
 };
 
 const connectUser = userId => {
@@ -81,7 +85,7 @@ const joinRoom = data => {
 };
 
 const removeUser = data => {
-  console.log("removing user", data.from)
+  console.log("removing user", data.from);
   let video = document.getElementById(`remoteView+${data.from}`);
   video && video.remove();
   delete pcPeers[data.from];
