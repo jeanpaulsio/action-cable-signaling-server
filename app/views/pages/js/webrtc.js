@@ -11,7 +11,7 @@ const remoteViewContainer = document.getElementById("remoteViewContainer");
 // CONFIG
 const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 const constraints = {
-  audio: false,
+  audio: true,
   video: { width: 240, height: 180 }
 };
 

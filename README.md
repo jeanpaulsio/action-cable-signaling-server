@@ -1,8 +1,6 @@
 # TODO
 
 * Scope chat sessions to specific rooms that user's can name. Think appear.in
-* Ability for multiple users to join conference
-* Ability for user to leave conference and join back in
 * Grab XirSys ice credentials and pass them along instead of using googles
 
 # Rails 5 + WebRTC = Magic
