@@ -1,6 +1,5 @@
 // BROADCAST TYPES
 const JOIN_ROOM = "JOIN_ROOM";
-const ROLLCALL = "ROLLCALL";
 const EXCHANGE = "EXCHANGE";
 const REMOVE_USER = "REMOVE_USER";
 
@@ -41,12 +40,12 @@ const handleJoinSession = async () => {
   App.session = await App.cable.subscriptions.create("SessionChannel", {
     connected: () => connectUser(currentUser),
     received: data => {
+      console.log('received', data)
       if (data.from === currentUser) return;
       switch (data.type) {
         case JOIN_ROOM:
           return joinRoom(data);
         case EXCHANGE:
-          data.sdp && console.log("received", data)
           if (data.to !== currentUser) return;
           return exchange(data);
         case REMOVE_USER:
@@ -82,6 +81,7 @@ const joinRoom = data => {
 };
 
 const removeUser = data => {
+  console.log("removing user", data.from)
   let video = document.getElementById(`remoteView+${data.from}`);
   video && video.remove();
   delete pcPeers[data.from];
@@ -129,8 +129,7 @@ const createPC = (userId, isOffer) => {
       console.log("Disconnected:", userId);
       broadcastData({
         type: REMOVE_USER,
-        from: currentUser,
-        to: userId
+        from: userId
       });
     }
   };
