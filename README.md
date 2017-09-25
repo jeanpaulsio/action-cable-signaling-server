@@ -1,4 +1,4 @@
-[Live Demo](action-cable-signaling-server.herokuapp.com)
+[Live Demo](https://action-cable-signaling-server.herokuapp.com/)
 
 # TODO
 
