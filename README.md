@@ -211,11 +211,9 @@ const broadcastData = data => {
   $.ajax({
     url: "sessions",
     type: "post",
-    data,
-    success: () => {},
-    error: () => {}
+    data
   });
-}
+};
 ```
 
 We are doing a couple things here. Our helper `broadcastData` is a wrapper around an AJAX request. When the button is pressed, we invoke `handleJoinSession` which creates a subscription to our `SessionChannel`.
@@ -263,12 +261,25 @@ const currentUser = document.getElementById("currentUser").innerHTML;
 Just a little more setup, let's grab some stuff from the DOM and set up a configuration object that will hold our `iceServers`
 
 ```js
+// BROADCAST TYPES
+const JOIN_ROOM = "JOIN_ROOM";
+const EXCHANGE = "EXCHANGE";
+const REMOVE_USER = "REMOVE_USER";
+
+// DOM ELEMENTS
+const currentUser = document.getElementById("currentUser").innerHTML;
 const selfView = document.getElementById("selfView");
 const remoteViewContainer = document.getElementById("remoteViewContainer");
-const configuration = { iceServers: [{ url: "stun:stun.l.google.com:19302" }] };
 
+// CONFIG
+const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const constraints = {
+  audio: false,
+  video: { width: 240, height: 180 }
+};
+
+// GLOBAL OBJECTS
 let pcPeers = {};
-let usersInRoom = {};
 let localStream;
 ```
 
@@ -281,10 +292,26 @@ We are also instantiating a couple of empty objects that will hold the users in 
 Our `webrtc.js` should look like this now:
 
 ```js
+// BROADCAST TYPES
+const JOIN_ROOM = "JOIN_ROOM";
+const EXCHANGE = "EXCHANGE";
+const REMOVE_USER = "REMOVE_USER";
+
+// DOM ELEMENTS
 const currentUser = document.getElementById("currentUser").innerHTML;
 const selfView = document.getElementById("selfView");
 const remoteViewContainer = document.getElementById("remoteViewContainer");
-const configuration = { iceServers: [{ url: "stun:stun.l.google.com:19302" }] };
+
+// CONFIG
+const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const constraints = {
+  audio: false,
+  video: { width: 240, height: 180 }
+};
+
+// GLOBAL OBJECTS
+let pcPeers = {};
+let localStream;
 
 const handleJoinSession = async () => {
   App.session = await App.cable.subscriptions.create("SessionChannel", {
@@ -301,31 +328,26 @@ const broadcastData = data => {
   $.ajax({
     url: "sessions",
     type: "post",
-    data,
-    success: () => {},
-    error: () => {}
+    data
   });
 };
 
+// Window Events
 window.onload = () => {
   initialize();
 };
 
 const initialize = () => {
   navigator.mediaDevices
-  .getUserMedia({
-    audio: true,
-    video: true
-  })
-  .then(stream => {
-    localStream = stream;
-    selfView.src = URL.createObjectURL(stream);
-    selfView.muted = true;
-  })
-  .catch(logError);
+    .getUserMedia(constraints)
+    .then(stream => {
+      localStream = stream;
+      selfView.srcObject = stream;
+      selfView.muted = true;
+    })
+    .catch(logError);
 };
 
-const logSuccess = () => {}
 const logError = error => console.warn("Whoops! Error:", error);
 ```
 
@@ -335,73 +357,136 @@ Ok - up to this point we have a user's video on the screen. When they press "Joi
 Here's a skeleton of our final script with some comments on what each function is doing.
 
 ```js
-const INITIATE_CONNECTION = "initiateConnection";
-const ROLLCALL = "rollcall";
-const EXCHANGE = "exchange";
-const REMOVE_USER = "removeUser"
+// BROADCAST TYPES
+const JOIN_ROOM = "JOIN_ROOM";
+const EXCHANGE = "EXCHANGE";
+const REMOVE_USER = "REMOVE_USER";
 
+// DOM ELEMENTS
 const currentUser = document.getElementById("currentUser").innerHTML;
 const selfView = document.getElementById("selfView");
 const remoteViewContainer = document.getElementById("remoteViewContainer");
-const configuration = { iceServers: [{ url: "stun:stun.l.google.com:19302" }] };
 
+// CONFIG
+const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const constraints = {
+  audio: false,
+  video: { width: 240, height: 180 }
+};
+
+// GLOBAL OBJECTS
 let pcPeers = {};
-let usersInRoom = {};
 let localStream;
 
-// initiate connection for a user
-// broadcast a "rollcall" to see which users are in the room
-const initiateConnection = () => {
+// Window Events
+window.onload = () => {
+  initialize();
 };
 
-// add the current user to the `usersInRoom` hash
-// return early if the current user is the only user in the room
-// if someone else is in the room, the current user will initiate the WebRTC dance by invoking `createPC`
-const rollcall = data => {
+const initialize = () => {
+  navigator.mediaDevices
+    .getUserMedia(constraints)
+    .then(stream => {
+      localStream = stream;
+      selfView.srcObject = stream;
+      selfView.muted = true;
+    })
+    .catch(logError);
 };
 
-// creates a new instance of RTCPeerConnection
-// adds the users local stream to the instance of the peer connection
-// creates an offer to the other users who is in the room
-// this offer is set as the current user's local description
-// then we broadcast "EXCHANGE" so that the user's local description can be sent to the other user who is in the room.
-// the other use in the room will take the "local description" and set it as their "remote description"
-// they will then create an answer and set that as their local description while sending it to the original sender of the offer.
-// the original sender of the offer will take the answer and set it as their remote description
-// in this function, we also exchange ice candidates
-// in this function, we also add remote streams
-const createPC = (userId, isOffer) => {
+const handleJoinSession = async () => {
+  // connect to action cable
+  // switch over broadcasted data.type and decide what to do from there
 };
 
-// when exchange is invoked we take a look at the data that is being passed
-// if we send an ice candidate, we exchange ice candidates
-// if we send a session description, we must look at if it is an offer or an answer
-const exchange = data => {
-};
-
-// leaves a session and closes a connection
 const handleLeaveSession = () => {
-}
+  // leaves session
+};
 
-// removes the remote video from the DOM
-const removeUser = (data) => {
-}
+const connectUser = userId => {
+  // routes a user to join a room
+};
 
-// routes the exchange of data as well as initiates the instance of action cable
+const joinRoom = data => {
+  // joins a room by creating a peer connection
+};
+
+const removeUser = data => {
+  // removes user from a room
+};
+
+const createPC = (userId, isOffer) => {
+  // new instance of peer connection
+};
+
+const exchange = data => {
+  // set ice candidates
+  // set remote and location descriptions
+};
+
+const broadcastData = data => {
+  $.ajax({
+    url: "sessions",
+    type: "post",
+    data
+  });
+};
+
+const logError = error => console.warn("Whoops! Error:", error);
+```
+
+Here is the file all filled out
+
+```js
+// BROADCAST TYPES
+const JOIN_ROOM = "JOIN_ROOM";
+const EXCHANGE = "EXCHANGE";
+const REMOVE_USER = "REMOVE_USER";
+
+// DOM ELEMENTS
+const currentUser = document.getElementById("currentUser").innerHTML;
+const selfView = document.getElementById("selfView");
+const remoteViewContainer = document.getElementById("remoteViewContainer");
+
+// CONFIG
+const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const constraints = {
+  audio: false,
+  video: { width: 240, height: 180 }
+};
+
+// GLOBAL OBJECTS
+let pcPeers = {};
+let localStream;
+
+// Window Events
+window.onload = () => {
+  initialize();
+};
+
+const initialize = () => {
+  navigator.mediaDevices
+    .getUserMedia(constraints)
+    .then(stream => {
+      localStream = stream;
+      selfView.srcObject = stream;
+      selfView.muted = true;
+    })
+    .catch(logError);
+};
+
 const handleJoinSession = async () => {
   App.session = await App.cable.subscriptions.create("SessionChannel", {
-    connected: () => {
-      broadcastData({ type: INITIATE_CONNECTION });
-    },
+    connected: () => connectUser(currentUser),
     received: data => {
-      console.log("RECEIVED:", data);
+      console.log("received", data);
+      if (data.from === currentUser) return;
       switch (data.type) {
-        case INITIATE_CONNECTION:
-          return initiateConnection();
-        case ROLLCALL:
-          return rollcall(data);
+        case JOIN_ROOM:
+          return joinRoom(data);
         case EXCHANGE:
-          return data.from === currentUser ? "" : exchange(data);
+          if (data.to !== currentUser) return;
+          return exchange(data);
         case REMOVE_USER:
           return removeUser(data);
         default:
@@ -411,140 +496,101 @@ const handleJoinSession = async () => {
   });
 };
 
-const broadcastData = data => {
-  $.ajax({
-    url: "sessions",
-    type: "post",
-    data,
-    success: () => {},
-    error: () => {}
-  });
-};
-
-window.onload = () => {
-  initialize();
-};
-
-const initialize = () => {
-  navigator.mediaDevices
-    .getUserMedia({
-      audio: false,
-      video: {
-        width: 320,
-        height: 240,
-      },
-    })
-    .then(stream => {
-      localStream = stream;
-      selfView.src = URL.createObjectURL(stream);
-      selfView.muted = true;
-    })
-    .catch(logError);
-};
-
-const logSuccess = () => {};
-const logError = error => console.warn("Whoops! Error:", error);
-
-```
-
-Here is the file all filled out
-
-```js
-const INITIATE_CONNECTION = "initiateConnection";
-const ROLLCALL = "rollcall";
-const EXCHANGE = "exchange";
-const REMOVE_USER = "removeUser"
-
-const currentUser = document.getElementById("currentUser").innerHTML;
-const selfView = document.getElementById("selfView");
-const remoteViewContainer = document.getElementById("remoteViewContainer");
-const configuration = { iceServers: [{ url: "stun:stun.l.google.com:19302" }] };
-
-let pcPeers = {};
-let usersInRoom = {};
-let localStream;
-
-const initiateConnection = () => {
-  broadcastData({
-    type: ROLLCALL,
-    from: currentUser,
-    usersInRoom: JSON.stringify(usersInRoom)
-  });
-};
-
-const rollcall = data => {
-  usersInRoom[data.from] = true;
-
-  currentUsersInRoom = JSON.parse(data.usersInRoom);
-  isOnlyUser = Object.keys(currentUsersInRoom).length === 0;
-
-  if (isOnlyUser) return;
-
-  if (!currentUsersInRoom[currentUser]) {
-    createPC(currentUser, true);
-    console.log("sending offer from currentUser", currentUser)
+const handleLeaveSession = () => {
+  for (user in pcPeers) {
+    pcPeers[user].close();
   }
+  pcPeers = {};
+
+  App.session.unsubscribe();
+
+  remoteViewContainer.innerHTML = "";
+
+  broadcastData({
+    type: REMOVE_USER,
+    from: currentUser
+  });
+};
+
+const connectUser = userId => {
+  broadcastData({
+    type: JOIN_ROOM,
+    from: currentUser
+  });
+};
+
+const joinRoom = data => {
+  createPC(data.from, true);
+};
+
+const removeUser = data => {
+  console.log("removing user", data.from);
+  let video = document.getElementById(`remoteView+${data.from}`);
+  video && video.remove();
+  delete pcPeers[data.from];
 };
 
 const createPC = (userId, isOffer) => {
-  let pc = new RTCPeerConnection(configuration);
+  let pc = new RTCPeerConnection(ice);
   pcPeers[userId] = pc;
   pc.addStream(localStream);
-  pc.onnegotiationneeded = () => isOffer && createOffer();
 
-  const createOffer = () => {
+  isOffer &&
     pc
       .createOffer()
       .then(offer => {
         pc.setLocalDescription(offer);
         broadcastData({
           type: EXCHANGE,
-          from: userId,
+          from: currentUser,
+          to: userId,
           sdp: JSON.stringify(pc.localDescription)
         });
       })
       .catch(logError);
-  };
 
   pc.onicecandidate = event => {
     event.candidate &&
       broadcastData({
         type: EXCHANGE,
-        from: userId,
+        from: currentUser,
+        to: userId,
         candidate: JSON.stringify(event.candidate)
       });
   };
 
   pc.onaddstream = event => {
-    console.log("adding stream")
     const element = document.createElement("video");
-    element.id = "remoteView";
+    element.id = `remoteView+${userId}`;
     element.autoplay = "autoplay";
-    element.src = URL.createObjectURL(event.stream);
+    element.srcObject = event.stream;
     remoteViewContainer.appendChild(element);
+  };
+
+  pc.oniceconnectionstatechange = event => {
+    if (pc.iceConnectionState == "disconnected") {
+      console.log("Disconnected:", userId);
+      broadcastData({
+        type: REMOVE_USER,
+        from: userId
+      });
+    }
   };
 
   return pc;
 };
 
 const exchange = data => {
-  console.log("exchanging data with:", data.from)
-
   let pc;
 
-  if (!pcPeers[currentUser]) {
-    pc = createPC(currentUser, false);
+  if (!pcPeers[data.from]) {
+    pc = createPC(data.from, false);
   } else {
-    pc = pcPeers[currentUser];
+    pc = pcPeers[data.from];
   }
 
   if (data.candidate) {
-    let candidate = new RTCIceCandidate(JSON.parse(data.candidate));
-
-    pc
-      .addIceCandidate(candidate)
-      .then(logSuccess)
-      .catch(logError);
+    pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)));
   }
 
   if (data.sdp) {
@@ -556,8 +602,9 @@ const exchange = data => {
           pc.createAnswer().then(answer => {
             pc.setLocalDescription(answer);
             broadcastData({
-              type: "exchange",
+              type: EXCHANGE,
               from: currentUser,
+              to: data.from,
               sdp: JSON.stringify(pc.localDescription)
             });
           });
@@ -567,84 +614,15 @@ const exchange = data => {
   }
 };
 
-const handleLeaveSession = () => {
-  let pc = pcPeers[currentUser];
-  if (pc) pc.close();
-
-  broadcastData({
-    type: REMOVE_USER,
-    from: currentUser
-  });
-
-  // removeUser();
-  let video = document.getElementById("remoteView");
-  if (video) video.remove();
-  location.reload();
-}
-
-const removeUser = (data) => {
-  let video = document.getElementById("remoteView");
-  if (video) video.remove();
-  location.reload();
-}
-
-const handleJoinSession = async () => {
-  App.session = await App.cable.subscriptions.create("SessionChannel", {
-    connected: () => {
-      broadcastData({ type: INITIATE_CONNECTION });
-    },
-    received: data => {
-      console.log("RECEIVED:", data);
-      switch (data.type) {
-        case INITIATE_CONNECTION:
-          return initiateConnection();
-        case ROLLCALL:
-          return rollcall(data);
-        case EXCHANGE:
-          return data.from === currentUser ? "" : exchange(data);
-        case REMOVE_USER:
-          return removeUser(data);
-        default:
-          return;
-      }
-    }
-  });
-};
-
 const broadcastData = data => {
   $.ajax({
     url: "sessions",
     type: "post",
-    data,
-    success: () => {},
-    error: () => {}
+    data
   });
 };
 
-window.onload = () => {
-  initialize();
-};
-
-const initialize = () => {
-  navigator.mediaDevices
-    .getUserMedia({
-      audio: false,
-      video: {
-        width: 320,
-        height: 240,
-      },
-    })
-    .then(stream => {
-      localStream = stream;
-      selfView.src = URL.createObjectURL(stream);
-      selfView.muted = true;
-    })
-    .catch(logError);
-};
-
-const logSuccess = () => {};
 const logError = error => console.warn("Whoops! Error:", error);
-
 ```
 
 

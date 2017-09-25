@@ -11,13 +11,12 @@ const remoteViewContainer = document.getElementById("remoteViewContainer");
 // CONFIG
 const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 const constraints = {
-  audio: true,
+  audio: false,
   video: { width: 240, height: 180 }
 };
 
 // GLOBAL OBJECTS
 let pcPeers = {};
-let usersInRoom = {};
 let localStream;
 
 // Window Events
