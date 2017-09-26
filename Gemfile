@@ -17,9 +17,10 @@ gem 'jquery-rails', '~> 4.3', '>= 4.3.1'
 gem 'rack-cors',    '~> 0.4.1'
 gem 'redis',        '~> 3.0'
 
-gem 'rest-client',  '~> 2.0', '>= 2.0.2'
-gem 'json',         '~> 2.1'
-gem 'bootstrap',    '~> 4.0.0.beta'
+gem 'rest-client',        '~> 2.0', '>= 2.0.2'
+gem 'json',               '~> 2.1'
+gem 'bootstrap',          '~> 4.0.0.beta'
+gem 'rails_real_favicon', '~> 0.0.7'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
