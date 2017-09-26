@@ -2,6 +2,7 @@
 
 # TODO
 
+* __Add shims__
 * Scope chat sessions to specific rooms that user's can name. Think appear.in
 * Grab XirSys ice credentials and pass them along instead of using googles
 
