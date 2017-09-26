@@ -1,17 +1,23 @@
+<h1>Action Cable Signaling Server</h1>
+
 <div>Random User ID:
   <span id="currentUser" class="badge badge-primary"><%= @random_number %></span>
 </div>
-<h1>Action Cable Signaling Server</h1>
 
 <video id="selfView" autoplay></video>
 <div id="remoteViewContainer"></div>
 
-<button onclick="handleJoinSession()" class="btn btn-success">
-  Join Session
-</button>
-<button onclick="handleLeaveSession()" class="btn btn-danger">
-  Leave Session
-</button>
+<div id="join-btn-container">
+  <button onclick="handleJoinSession()" class="btn btn-success">
+    Join Room
+  </button>
+</div>
+
+<div id="leave-btn-container">
+  <button onclick="handleLeaveSession()" class="btn btn-danger">
+    Leave Room
+  </button>
+</div>
 
 <% content_for :page_js do %>
   <script type="text/javascript">

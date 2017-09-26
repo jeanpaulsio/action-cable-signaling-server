@@ -7,6 +7,8 @@ const REMOVE_USER = "REMOVE_USER";
 const currentUser = document.getElementById("currentUser").innerHTML;
 const selfView = document.getElementById("selfView");
 const remoteViewContainer = document.getElementById("remoteViewContainer");
+const joinBtnContainer = document.getElementById("join-btn-container");
+const leaveBtnContainer = document.getElementById("leave-btn-container");
 
 // CONFIG
 const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
@@ -54,6 +56,9 @@ const handleJoinSession = async () => {
       }
     }
   });
+
+  joinBtnContainer.style.display = "none";
+  leaveBtnContainer.style.display = "block";
 };
 
 const handleLeaveSession = () => {
@@ -70,6 +75,9 @@ const handleLeaveSession = () => {
     type: REMOVE_USER,
     from: currentUser
   });
+
+  joinBtnContainer.style.display = "block";
+  leaveBtnContainer.style.display = "none";
 };
 
 const connectUser = userId => {
