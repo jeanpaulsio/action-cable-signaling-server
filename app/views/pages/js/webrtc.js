@@ -10,6 +10,9 @@ const remoteViewContainer = document.getElementById("remoteViewContainer");
 const joinBtnContainer = document.getElementById("join-btn-container");
 const leaveBtnContainer = document.getElementById("leave-btn-container");
 
+let xirsysIceCreds = JSON.parse(document.getElementById("xirsys-creds").dataset.xirsys)
+xirsysIceCreds = JSON.parse(xirsysIceCreds)["v"]
+
 // CONFIG
 const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 const constraints = {
@@ -99,7 +102,7 @@ const removeUser = data => {
 };
 
 const createPC = (userId, isOffer) => {
-  let pc = new RTCPeerConnection(ice);
+  let pc = new RTCPeerConnection(xirsysIceCreds);
   pcPeers[userId] = pc;
   pc.addStream(localStream);
 

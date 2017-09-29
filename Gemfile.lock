@@ -72,6 +72,8 @@ GEM
     erubi (1.6.1)
     execjs (2.7.0)
     ffi (1.9.18)
+    figaro (1.1.1)
+      thor (~> 0.14)
     globalid (0.4.0)
       activesupport (>= 4.2.0)
     http-cookie (1.0.3)
@@ -210,6 +212,7 @@ DEPENDENCIES
   byebug
   capybara (~> 2.13)
   coffee-rails (~> 4.2)
+  figaro (~> 1.1, >= 1.1.1)
   jbuilder (~> 2.5)
   jquery-rails (~> 4.3, >= 4.3.1)
   json (~> 2.1)
