@@ -1,10 +1,9 @@
 [Live Demo](https://action-cable-signaling-server.herokuapp.com/)
 
 # TODO
-
-* __Add shims__
-* Scope chat sessions to specific rooms that user's can name. Think appear.in
-* Grab XirSys ice credentials and pass them along instead of using googles
+- [ ] Firefox support (shims)
+- [ ] Scope chat sessions to specific rooms that user's can name. Think appear.in
+- [x] Grab XirSys ice credentials and pass them along instead of using googles
 
 # Rails 5 + WebRTC = Magic
 
@@ -40,7 +39,7 @@ end
 
 Let's make it so that we can inject JS into our root route somewhat elegantly. Inside of `application.html.erb`, add this yield statement
 
-```html
+```erb
   <%= yield %>
   <%= yield :page_js %>
 ```
@@ -60,7 +59,7 @@ Our folder structure will look like this:
 
 To wire up our `webrtc.js` file, we add this block inside of our `home.html.erb`
 
-```html
+```erb
 <!-- home.html.erb -->
 # ...
 
@@ -73,7 +72,7 @@ To wire up our `webrtc.js` file, we add this block inside of our `home.html.erb`
 
 The full `home.html.erb` thus far:
 
-```html
+```erb
 <h1>Action Cable + WebRTC + Xirsys</h1>
 
 <video id="selfView" autoplay></video>
@@ -251,7 +250,7 @@ end
 
 Then, we'll add this to the top of our `home.html.erb` so that we can access it in our JS
 
-```html
+```erb
 <div>Random user id:
   <span id="currentUser"><%= @random_number %></span>
 </div>
