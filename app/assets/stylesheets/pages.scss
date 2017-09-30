@@ -1,0 +1,16 @@
+#localViewContainer {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#remoteViewContainer {
+  width: 100%;
+  video {
+    width: 300px;
+    height: auto;
+    border: 3px solid gray;
+  }
+}

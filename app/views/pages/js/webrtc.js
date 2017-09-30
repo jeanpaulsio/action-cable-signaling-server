@@ -19,7 +19,7 @@ xirsysIceCreds = JSON.parse(xirsysIceCreds)["v"];
 
 const constraints = {
   audio: false,
-  video: { width: 240, height: 180 }
+  video: true
 };
 
 // GLOBAL OBJECTS
