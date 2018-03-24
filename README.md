@@ -1,11 +1,20 @@
-[Live Demo](https://action-cable-signaling-server.herokuapp.com/)
+<div align="center">
+  <h1>🤝</h1>
+  <h1>Action Cable Signaling Server<h1>
+  <p>
+    A Rails implementation of a signaling server for WebRTC apps leveraging Action Cable instead of Socket.io
+  </p>
+</div>
 
-# TODO
-- [ ] Firefox support (shims)
-- [ ] Scope chat sessions to specific rooms that user's can name. Think appear.in
-- [x] Grab XirSys ice credentials and pass them along instead of using googles
+<hr>
 
-# Rails 5 + WebRTC = Magic
+# Problem
+WebRTC is hard enough as it is. You want to implement real-time communication in your Rails app (video chat, screensharing, etc) but all of the examples online use socket.io. But you're a Rails dev! You don't want to spin up a Node server and create an Express app just for this feature.
+
+# Solution
+We can broadcast messages and take care of the signaling handshake between peers (aka the WebRTC dance) using Action Cable.
+
+<hr>
 
 __How to recreate yourself__
 
