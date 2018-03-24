@@ -1,12 +1,7 @@
 <div align="center">
-  <h1>🤝</h1>
-  <h1>Action Cable Signaling Server<h1>
-  <p>
-    A Rails implementation of a signaling server for WebRTC apps leveraging Action Cable instead of Socket.io
-  </p>
+  <h1>Action Cable Signaling Server 🤝<h1>
+  A Rails implementation of a signaling server for WebRTC apps leveraging Action Cable instead of Socket.io
 </div>
-
-<hr>
 
 # Problem
 WebRTC is hard enough as it is. You want to implement real-time communication in your Rails app (video chat, screensharing, etc) but all of the examples online use socket.io. But you're a Rails dev! You don't want to spin up a Node server and create an Express app just for this feature.
@@ -14,14 +9,8 @@ WebRTC is hard enough as it is. You want to implement real-time communication in
 # Solution
 We can broadcast messages and take care of the signaling handshake between peers (aka the WebRTC dance) using Action Cable.
 
-<hr>
-
-__How to recreate yourself__
-
 
 ## Basics
-
-This is a very basic example of how to create a signaling server by leveraging Action Cable. A lot of the examples online use socket.io - but you might not want to spin up a Node server concurrently with your Rails App.
 
 ```
 $ rails new action-cable-signaling-server --database=postgresql
