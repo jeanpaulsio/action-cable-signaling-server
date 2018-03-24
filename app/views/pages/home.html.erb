@@ -1,38 +1,19 @@
 <h1>Action Cable Signaling Server</h1>
 
-<span id="xirsys-creds" data-xirsys='<%= @json_response.html_safe %>'>
-</span>
-
 <div>Random User ID:
-  <span id="currentUser" class="badge badge-primary"><%= @random_number %></span>
+  <span id="current-user"><%= @random_number %></span>
 </div>
 
-<div id="remoteViewContainer"></div>
+<div id="remote-video-container"></div>
+<video id="local-video" autoplay></video>
 
-<div class="row">
-  <div class="col-md-12">
-    <div id="localViewContainer">
-      <video id="selfView" autoplay></video>
-    </div>
-  </div>
-</div>
+<hr />
 
-<div id="join-btn-container">
-  <button onclick="handleJoinSession()" class="btn btn-success">
-    Join Room
-  </button>
-</div>
+<button onclick="handleJoinSession()">
+  Join Room
+</button>
 
-<div id="leave-btn-container">
-  <button onclick="handleLeaveSession()" class="btn btn-danger">
-    Leave Room
-  </button>
-</div>
+<button onclick="handleLeaveSession()">
+  Leave Room
+</button>
 
-
-
-<% content_for :page_js do %>
-  <script type="text/javascript">
-    <%= render file: "#{Rails.root}/app/views/pages/js/webrtc.js" %>
-  </script>
-<% end %>

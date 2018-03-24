@@ -41,13 +41,7 @@ GEM
     addressable (2.5.2)
       public_suffix (>= 2.0.2, < 4.0)
     arel (8.0.0)
-    autoprefixer-rails (8.2.0)
-      execjs
     bindex (0.5.0)
-    bootstrap (4.0.0)
-      autoprefixer-rails (>= 6.0.3)
-      popper_js (>= 1.12.9, < 2)
-      sass (>= 3.5.2)
     builder (3.2.3)
     byebug (10.0.1)
     capybara (2.18.0)
@@ -84,10 +78,6 @@ GEM
     jbuilder (2.7.0)
       activesupport (>= 4.2.0)
       multi_json (>= 1.2)
-    jquery-rails (4.3.1)
-      rails-dom-testing (>= 1, < 3)
-      railties (>= 4.2.0)
-      thor (>= 0.14, < 2.0)
     json (2.1.0)
     listen (3.1.5)
       rb-fsevent (~> 0.9, >= 0.9.4)
@@ -111,7 +101,6 @@ GEM
     nokogiri (1.8.2)
       mini_portile2 (~> 2.3.0)
     pg (0.21.0)
-    popper_js (1.12.9)
     public_suffix (3.0.2)
     puma (3.11.3)
     rack (2.0.4)
@@ -211,13 +200,11 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bootstrap (~> 4.0.0.beta)
   byebug
   capybara (~> 2.13)
   coffee-rails (~> 4.2)
   figaro (~> 1.1, >= 1.1.1)
   jbuilder (~> 2.5)
-  jquery-rails (~> 4.3, >= 4.3.1)
   json (~> 2.1)
   listen (>= 3.0.5, < 3.2)
   pg (~> 0.18)
