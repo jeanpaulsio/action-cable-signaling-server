@@ -1,9 +1,11 @@
 <div align="center">
-  <img src="https://emojipedia-us.s3.amazonaws.com/thumbs/240/apple/118/handshake_1f91d.png" />
-  <h1>Action Cable Signaling Server<h1>
+<img src="https://emojipedia-us.s3.amazonaws.com/thumbs/240/apple/118/handshake_1f91d.png" />
+<h1>Action Cable Signaling Server</h1>
+
+<p>A Rails implementation of a signaling server for WebRTC apps leveraging Action Cable instead of Socket.io</p>
 </div>
-    
-A Rails implementation of a signaling server for WebRTC apps leveraging Action Cable instead of Socket.io
+
+<hr />
 
 # Problem
 WebRTC is hard enough as it is. You want to implement real-time communication in your Rails app (video chat, screensharing, etc) but all of the examples online use socket.io. But you're a Rails dev! You don't want to spin up a Node server and create an Express app just for this feature.
