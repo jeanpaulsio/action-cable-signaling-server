@@ -15,11 +15,11 @@ We can broadcast messages and take care of the signaling handshake 🤝 between 
 
 ## DIY Approach
 
-Here, I'll walk you through implementing your own signaling server from scratch. The goal is to package this up as a Ruby gem (coming soon). 
+Here, I'll walk you through implementing your own signaling server from scratch. The goal is to package this up as a Ruby gem (coming soon).
 
 In this example, we'll make a video chat app. However, WebRTC can do more than that! Once your signaling server is set up, it's possible to extend your app to support other cool stuff like screen sharing.
 
-We're going to be creating a few files for this. 
+We're going to be creating a few files for this.
 
 ```
 ├── app
@@ -36,7 +36,7 @@ We're going to be creating a few files for this.
 │   │   │   └── home.html.erb
 ```
 
-* `signaling-server.js` - Holds all of our WebRTC JS logic. We'll also be sending data to our backend using JavaScript's `fetch` API. Data will be broadcasted with Action Cable. 
+* `signaling-server.js` - Holds all of our WebRTC JS logic. We'll also be sending data to our backend using JavaScript's `fetch` API. Data will be broadcasted with Action Cable.
 * `session_channel.rb` - Subscribes a user to a particular channel. In this case, `session_channel`.
 * `sessions_controller.rb` - Endpoint that will broadcast data.
 * `pages_controller.rb` - Will house our video stream. Nothing special about this.
@@ -50,7 +50,7 @@ We're going to be creating a few files for this.
 Rails.application.routes.draw do
   root 'pages#home'
   post '/sessions', to: 'sessions#create'
-  
+
   mount ActionCable.server, at: '/cable'
 end
 ```
@@ -95,7 +95,7 @@ We also need to make sure that we're accepting `json` requests inside of our `Ap
 </button>
 ```
 
-The reason we have `@random_number` is because each user should have a unique identifier when joininig the room. In a real app, this could be something like `@user.id`.
+The reason we have `@random_number` is because each user should have a unique identifier when joining the room. In a real app, this could be something like `@user.id`.
 
 The `PagesController` is super simple:
 
@@ -134,9 +134,9 @@ class SessionsController < ApplicationController
     head :no_content
     ActionCable.server.broadcast "session_channel", session_params
   end
-  
+
   private
-  
+
   def session_params
     params.permit(:type, :from, :to, :sdp, :candidate)
   end
@@ -173,7 +173,7 @@ const broadcastData = data => {
 };
 ```
 
-We're doing a couple things here. The `broadcastData` function is just a wrapper around JavaScript's `fetch` API. When we press "Join Room" in our view, we invoke `handleJoinSession()` which creates a subscription to `SessionChannel`. 
+We're doing a couple things here. The `broadcastData` function is just a wrapper around JavaScript's `fetch` API. When we press "Join Room" in our view, we invoke `handleJoinSession()` which creates a subscription to `SessionChannel`.
 
 Once a user connects, we `POST` to sessions an object. Remember, we whitelisted `:type` so our `initiateConnection` value will be accepted.
 
@@ -187,7 +187,7 @@ We are seeing this because our received method will log out data that is receive
 
 ### More WebRTC setup
 
-Here's a commeneted out skeleton of our `signaling-server.js` file
+Here's a commented out skeleton of our `signaling-server.js` file
 
 ```javascript
 // Broadcast Types
@@ -469,7 +469,7 @@ const logError = error => console.warn("Whoops! Error:", error);
 
 ### Deployment (Heroku)
 
-You would deploy this app the same way you would any other Rails app that is using ActionCable. 
+You would deploy this app the same way you would any other Rails app that is using ActionCable.
 
 The only caveat is that in order to use `const` and `let` declarations in the Rails asset pipeline, we need to configure the uglifier.
 
