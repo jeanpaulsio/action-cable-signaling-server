@@ -7,242 +7,101 @@
 
 <hr />
 
-# Problem
+## Problem
 WebRTC is hard enough as it is. You want to implement real-time communication in your Rails app (video chat, screensharing, etc) but all of the examples online use socket.io. But you're a Rails dev! You don't want to spin up a Node server and create an Express app just for this feature.
 
-# Solution
-We can broadcast messages and take care of the signaling handshake between peers (aka the WebRTC dance) using Action Cable.
+## Solution
+We can broadcast messages and take care of the signaling handshake 🤝 between peers (aka the WebRTC dance) using Action Cable.
 
+## DIY Approach
 
-## Basics
+Here, I'll walk you through implementing your own signaling server from scratch. The goal is to package this up as a Ruby gem (coming soon). 
 
-```
-$ rails new action-cable-signaling-server --database=postgresql
-$ cd action-cable-signaling-server
-$ rails db:create
-$ rails db:migrate
-```
+In this example, we'll make a video chat app. However, WebRTC can do more than that! Once your signaling server is set up, it's possible to extend your app to support other cool stuff like screen sharing.
 
-We won't be touching our database in this example but we do need a few controllers
-
-```
-$ rails g controller Pages home
-$ rails g controller Sessions
-```
-
-Now we can wire up our routes. We only need two of them for all intents and purposes. Our root route will house the video conference. Second, our `POST /sessions` endpoint will be used to broadcast data using Action Cable via AJAX requests
-
-```ruby
-Rails.application.routes.draw do
-  root 'pages#home'
-  post '/sessions', to: 'sessions#create'
-end
-```
-
-Let's make it so that we can inject JS into our root route somewhat elegantly. Inside of `application.html.erb`, add this yield statement
-
-```erb
-  <%= yield %>
-  <%= yield :page_js %>
-```
-
-Our folder structure will look like this:
+We're going to be creating a few files for this. 
 
 ```
 ├── app
+│   ├── assets
+│   │   ├── javascripts
+│   │   │   └── signaling-server.js
+│   ├── channels
+│   │   └── session_channel.rb
+│   ├── controllers
+│   │   └── sessions_controller.rb
+│   │   └── pages_controller.rb
 │   ├── views
-│   │   ├── devise
-│   │   ├── layouts
 │   │   ├── pages
-│   │   │   ├── js
-│   │   │   │   └── webrtc.js
 │   │   │   └── home.html.erb
 ```
 
-To wire up our `webrtc.js` file, we add this block inside of our `home.html.erb`
+* `signaling-server.js` - Holds all of our WebRTC JS logic. We'll also be sending data to our backend using JavaScript's `fetch` API. Data will be broadcasted with Action Cable. 
+* `session_channel.rb` - Subscribes a user to a particular channel. In this case, `session_channel`.
+* `sessions_controller.rb` - Endpoint that will broadcast data.
+* `pages_controller.rb` - Will house our video stream. Nothing special about this.
+* `home.html.erb` - Corresponding view to `pages#home`.
 
-```erb
-<!-- home.html.erb -->
-# ...
-
-<% content_for :page_js do %>
-  <script type="text/javascript">
-    <%= render file: "#{Rails.root}/app/views/pages/js/webrtc.js" %>
-  </script>
-<% end %>
-```
-
-The full `home.html.erb` thus far:
-
-```erb
-<h1>Action Cable + WebRTC + Xirsys</h1>
-
-<video id="selfView" autoplay></video>
-<div id="remoteViewContainer"></div>
-
-<button onclick="handleJoinSession();">Join Session</button>
-<button onclick="handleLeaveSession();">Leave Session</button>
-
-<% content_for :page_js do %>
-  <script type="text/javascript">
-    <%= render file: "#{Rails.root}/app/views/pages/js/webrtc.js" %>
-  </script>
-<% end %>
-```
-
-We'll throw some JS inside of `webrtc.js` and log something out so that we can make sure we're good to go
-
-```js
-window.onload = () => {
-  initialize();
-};
-
-const initialize = () => {
-  console.log("initializing");
-};
-
-const handleJoinSession = () => {
-  console.log("Join Session");
-};
-```
-
-When we refresh the page, we should see a console.log inside of our dev tools that reads "initializing" and when we press "Join Session", we should see a console.log statement that reads "Join Session"
-
-## Action Cable Setup
-
-We'll generate a channel called `Session`
-
-```
-$ rails g channel Session
-```
-
-This generates:
-
-```
-create     app/channels/session_channel.rb
-identical  app/assets/javascripts/cable.js
-create     app/assets/javascripts/channels/session.coffee
-```
-
-We will only be taking a look at `session_channel.rb`. The logic normally found in `session.coffee` will be placed in `webrtc.js`
-
-Make sure to go inside of `session.coffee` and **remove all of the content from there**
-
-Inside of `session_channel.rb`
+### Routes
 
 ```ruby
-  def subscribed
-    stream_from "session_channel"
-  end
-```
+# config/routes.rb
 
-Add this line to your routes:
-
-```
-mount ActionCable.server, at: '/cable'
-```
-
-Now that we're subscribed to `session_channel`, let's broadcast data every time we `POST /sessions`
-
-Inside of our `sessions_controller` that we generated earlier, we can write our `create` method
-
-```ruby
-class SessionsController < ApplicationController
-  def create
-    head :no_content
-    ActionCable.server.broadcast "session_channel", params
-  end
+Rails.application.routes.draw do
+  root 'pages#home'
+  post '/sessions', to: 'sessions#create'
+  
+  mount ActionCable.server, at: '/cable'
 end
 ```
 
-* Note that `params` is just an object that we will be sending from (any) client that is wired up to our app
+Our routes will look something like this. We haven't done anything with Action Cable just yet, but do take note that we mount the server in our routes.
 
-___
 
-At this point, you might be wondering, "How are we going to send data from the client to the server and broadcast that back to connected users?"
-
-If you weren't that's okay. The answer is AJAX
-
-Inside of your `gemfile`
+### ApplicationController
 
 ```ruby
-gem 'jquery-rails', '~> 4.3', '>= 4.3.1'
-```
+# app/controllers/application_controller.rb
 
-include it in your `application.js`
-
-```
-//= require jquery
-//= require jquery_ujs
-```
-
-Before we can start making POST requests, we have to set a few things up. Inside of our `ApplicationController`:
-
-```ruby
-protect_from_forgery unless: -> { request.format.json? }
-```
-
-While we're at it, let's enable CORS
-
-```ruby
-# Gemfile
-gem 'rack-cors', '~> 0.4.1'
-
-# application.rb
-config.middleware.insert_before 0, Rack::Cors do
-  allow do
-    origins '*'
-    resource '*', :headers => :any, :methods => [:get, :post, :options, :delete]
-  end
+class ApplicationController < ActionController::Base
+  protect_from_forgery unless: -> { request.format.json? }
 end
 ```
 
-Finally... let's test out our ActionCable by POST'ing to sessions. We'll write a helper method inside of `webrtc.js`
+We also need to make sure that we're accepting `json` requests inside of our `ApplicationController`.
 
-```js
-const handleJoinSession = async () => {
-  App.session = await App.cable.subscriptions.create("SessionChannel", {
-    connected: () => {
-      broadcastData({ type: "initiateConnection" });
-    },
-    received: data => {
-      console.log("RECEIVED:", data);
-    }
-  });
-};
+### Scaffolding out the View
 
-const broadcastData = data => {
-  $.ajax({
-    url: "sessions",
-    type: "post",
-    data
-  });
-};
+```html
+<!-- app/views/pages/home.html.erb -->
+
+<h1>Action Cable Signaling Server</h1>
+
+<div>Random User ID:
+  <span id="current-user"><%= @random_number %></span>
+</div>
+
+<div id="remote-video-container"></div>
+<video id="local-video" autoplay></video>
+
+<hr />
+
+<button onclick="handleJoinSession()">
+  Join Room
+</button>
+
+<button onclick="handleLeaveSession()">
+  Leave Room
+</button>
 ```
 
-We are doing a couple things here. Our helper `broadcastData` is a wrapper around an AJAX request. When the button is pressed, we invoke `handleJoinSession` which creates a subscription to our `SessionChannel`.
+The reason we have `@random_number` is because each user should have a unique identifier when joininig the room. In a real app, this could be something like `@user.id`.
 
-Once a user connects, we POST to sessions an object:
-
-```js
-broadcastData({ type: "initiateConnection" });
-```
-
-Inside of our console, we should see this:
-
-```
-RECEIVED: {type: "initiateConnection", controller: "sessions", action: "create"}
-```
-
-We are seeing this because our `received` method will log out data that is received from the subscription. If you see that, congrats! You're now able to send and receive data. This is the foundation for the WebRTC dance and is paramount for our signaling server
-
-## Spooky WebRTC Stuff
-
-Okay, we're almost to the spooky webrtc stuff. But first, let's create the concept of unique users. We'll generate a fake user_id
-
-Inside of `PagesController`,
+The `PagesController` is super simple:
 
 ```ruby
+# app/controllers/pages_controller.rb
+
 class PagesController < ApplicationController
   def home
     @random_number = rand(0...10_000)
@@ -250,72 +109,47 @@ class PagesController < ApplicationController
 end
 ```
 
-Then, we'll add this to the top of our `home.html.erb` so that we can access it in our JS
+### Action Cable Setup
 
-```erb
-<div>Random user id:
-  <span id="currentUser"><%= @random_number %></span>
-</div>
+We'll need to create just two files for this
+
+```ruby
+# app/channels/session_channel.rb
+
+class SessionChannel < ApplicationCable::Channel
+  def subscribed
+    stream_from "session_channel"
+  end
+
+  def unsubscribed
+    # Any cleanup needed when channel is unsubscribed
+  end
 ```
 
-```js
-const currentUser = document.getElementById("currentUser").innerHTML;
+```ruby
+# app/controllers/sessions_controller.rb
+
+class SessionsController < ApplicationController
+  def create
+    head :no_content
+    ActionCable.server.broadcast "session_channel", session_params
+  end
+  
+  private
+  
+  def session_params
+    params.permit(:type, :from, :to, :sdp, :candidate)
+  end
+end
 ```
 
-Just a little more setup, let's grab some stuff from the DOM and set up a configuration object that will hold our `iceServers`
+Our whitelisted params should give you a little insight as to what we're broadcasting in order to complete the WebRTC dance.
+
+### signaling-server.js
+
+We'll test our Action Cable connection before diving into the WebRTC portion
 
 ```js
-// BROADCAST TYPES
-const JOIN_ROOM = "JOIN_ROOM";
-const EXCHANGE = "EXCHANGE";
-const REMOVE_USER = "REMOVE_USER";
-
-// DOM ELEMENTS
-const currentUser = document.getElementById("currentUser").innerHTML;
-const selfView = document.getElementById("selfView");
-const remoteViewContainer = document.getElementById("remoteViewContainer");
-
-// CONFIG
-const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-const constraints = {
-  audio: false,
-  video: { width: 240, height: 180 }
-};
-
-// GLOBAL OBJECTS
-let pcPeers = {};
-let localStream;
-```
-
-We are just grabbing the elements that will hold local and remote views
-
-We are also instantiating a couple of empty objects that will hold the users in the room
-
-`localStream` will hold the current users's stream... which we'll grab now! Inside of our `initialize` function, we'll call `navigator.mediaDevices.getUserMedia` and set the stream to `localStream`
-
-Our `webrtc.js` should look like this now:
-
-```js
-// BROADCAST TYPES
-const JOIN_ROOM = "JOIN_ROOM";
-const EXCHANGE = "EXCHANGE";
-const REMOVE_USER = "REMOVE_USER";
-
-// DOM ELEMENTS
-const currentUser = document.getElementById("currentUser").innerHTML;
-const selfView = document.getElementById("selfView");
-const remoteViewContainer = document.getElementById("remoteViewContainer");
-
-// CONFIG
-const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-const constraints = {
-  audio: false,
-  video: { width: 240, height: 180 }
-};
-
-// GLOBAL OBJECTS
-let pcPeers = {};
-let localStream;
 
 const handleJoinSession = async () => {
   App.session = await App.cable.subscriptions.create("SessionChannel", {
@@ -328,160 +162,168 @@ const handleJoinSession = async () => {
   });
 };
 
+const handleLeaveSession = () => {};
+
 const broadcastData = data => {
-  $.ajax({
-    url: "sessions",
-    type: "post",
-    data
+  fetch("sessions", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: { "content-type": "application/json" }
   });
 };
-
-// Window Events
-window.onload = () => {
-  initialize();
-};
-
-const initialize = () => {
-  navigator.mediaDevices
-    .getUserMedia(constraints)
-    .then(stream => {
-      localStream = stream;
-      selfView.srcObject = stream;
-      selfView.muted = true;
-    })
-    .catch(logError);
-};
-
-const logError = error => console.warn("Whoops! Error:", error);
 ```
 
-Ok - up to this point we have a user's video on the screen. When they press "Join Session", they initiate a connection to Action Cable
+We're doing a couple things here. The `broadcastData` function is just a wrapper around JavaScript's `fetch` API. When we press "Join Room" in our view, we invoke `handleJoinSession()` which creates a subscription to `SessionChannel`. 
 
+Once a user connects, we `POST` to sessions an object. Remember, we whitelisted `:type` so our `initiateConnection` value will be accepted.
 
-Here's a skeleton of our final script with some comments on what each function is doing.
+If you take a peek at your running server, you should see something like:
 
-```js
-// BROADCAST TYPES
+```
+RECEIVED: {type: "initiateConnection", controller: "sessions", action: "create"}
+```
+
+We are seeing this because our received method will log out data that is received from the subscription. If you see that, congrats! You're now able to send and receive data. This is the foundation for the WebRTC dance and is paramount for our signaling serve.
+
+### More WebRTC setup
+
+Here's a commeneted out skeleton of our `signaling-server.js` file
+
+```javascript
+// Broadcast Types
 const JOIN_ROOM = "JOIN_ROOM";
 const EXCHANGE = "EXCHANGE";
 const REMOVE_USER = "REMOVE_USER";
 
-// DOM ELEMENTS
-const currentUser = document.getElementById("currentUser").innerHTML;
-const selfView = document.getElementById("selfView");
-const remoteViewContainer = document.getElementById("remoteViewContainer");
+// DOM Elements
+let currentUser;
+let localVideo;
+let remoteVideoContainer;
 
-// CONFIG
-const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-const constraints = {
-  audio: false,
-  video: { width: 240, height: 180 }
-};
-
-// GLOBAL OBJECTS
+// Objects
 let pcPeers = {};
-let localStream;
+let localstream;
 
-// Window Events
 window.onload = () => {
-  initialize();
+  currentUser = document.getElementById("current-user").innerHTML;
+  localVideo = document.getElementById("local-video");
+  remoteVideoContainer = document.getElementById("remote-video-container");
 };
 
-const initialize = () => {
-  navigator.mediaDevices
-    .getUserMedia(constraints)
-    .then(stream => {
-      localStream = stream;
-      selfView.srcObject = stream;
-      selfView.muted = true;
-    })
-    .catch(logError);
+// Ice Credentials
+const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+// Initialize user's own video
+document.onreadystatechange = () => {
+  if (document.readyState === "interactive") {
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: false,
+        video: true
+      })
+      .then(stream => {
+        localstream = stream;
+        localVideo.srcObject = stream;
+        localVideo.muted = true;
+      })
+      .catch(logError);
+  }
 };
 
 const handleJoinSession = async () => {
-  // connect to action cable
-  // switch over broadcasted data.type and decide what to do from there
+  // connect to Action Cable
+  // Switch over broadcasted data.type and decide what to do from there
 };
 
 const handleLeaveSession = () => {
-  // leaves session
-};
-
-const connectUser = userId => {
-  // routes a user to join a room
+  // leave session
 };
 
 const joinRoom = data => {
-  // joins a room by creating a peer connection
+  // create a peerConnection to join a room
 };
 
 const removeUser = data => {
-  // removes user from a room
+  // remove a user from a room
 };
 
 const createPC = (userId, isOffer) => {
-  // new instance of peer connection
+  // new instance of RTCPeerConnection
+  // potentially create an "offer"
+  // exchange SDP
+  // exchange ICE
+  // add stream
+  // returns instance of peer connection
 };
 
 const exchange = data => {
-  // set ice candidates
-  // set remote and location descriptions
+  // add ice candidates
+  // sets remote and local description
+  // creates answer to sdp offer
 };
 
 const broadcastData = data => {
-  $.ajax({
-    url: "sessions",
-    type: "post",
-    data
+  fetch("sessions", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: { "content-type": "application/json" }
   });
 };
 
 const logError = error => console.warn("Whoops! Error:", error);
 ```
 
-Here is the file all filled out
+And here's our final JS
 
-```js
-// BROADCAST TYPES
+```javascript
+// Broadcast Types
 const JOIN_ROOM = "JOIN_ROOM";
 const EXCHANGE = "EXCHANGE";
 const REMOVE_USER = "REMOVE_USER";
 
-// DOM ELEMENTS
-const currentUser = document.getElementById("currentUser").innerHTML;
-const selfView = document.getElementById("selfView");
-const remoteViewContainer = document.getElementById("remoteViewContainer");
+// DOM Elements
+let currentUser;
+let localVideo;
+let remoteVideoContainer;
 
-// CONFIG
-const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-const constraints = {
-  audio: false,
-  video: { width: 240, height: 180 }
-};
-
-// GLOBAL OBJECTS
+// Objects
 let pcPeers = {};
-let localStream;
+let localstream;
 
-// Window Events
 window.onload = () => {
-  initialize();
+  currentUser = document.getElementById("current-user").innerHTML;
+  localVideo = document.getElementById("local-video");
+  remoteVideoContainer = document.getElementById("remote-video-container");
 };
 
-const initialize = () => {
-  navigator.mediaDevices
-    .getUserMedia(constraints)
-    .then(stream => {
-      localStream = stream;
-      selfView.srcObject = stream;
-      selfView.muted = true;
-    })
-    .catch(logError);
+// Ice Credentials
+const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+// Initialize user's own video
+document.onreadystatechange = () => {
+  if (document.readyState === "interactive") {
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: false,
+        video: true
+      })
+      .then(stream => {
+        localstream = stream;
+        localVideo.srcObject = stream;
+        localVideo.muted = true;
+      })
+      .catch(logError);
+  }
 };
 
 const handleJoinSession = async () => {
   App.session = await App.cable.subscriptions.create("SessionChannel", {
-    connected: () => connectUser(currentUser),
+    connected: () => {
+      broadcastData({
+        type: JOIN_ROOM,
+        from: currentUser
+      });
+    },
     received: data => {
       console.log("received", data);
       if (data.from === currentUser) return;
@@ -508,17 +350,10 @@ const handleLeaveSession = () => {
 
   App.session.unsubscribe();
 
-  remoteViewContainer.innerHTML = "";
+  remoteVideoContainer.innerHTML = "";
 
   broadcastData({
     type: REMOVE_USER,
-    from: currentUser
-  });
-};
-
-const connectUser = userId => {
-  broadcastData({
-    type: JOIN_ROOM,
     from: currentUser
   });
 };
@@ -529,7 +364,7 @@ const joinRoom = data => {
 
 const removeUser = data => {
   console.log("removing user", data.from);
-  let video = document.getElementById(`remoteView+${data.from}`);
+  let video = document.getElementById(`remoteVideoContainer+${data.from}`);
   video && video.remove();
   delete pcPeers[data.from];
 };
@@ -537,7 +372,7 @@ const removeUser = data => {
 const createPC = (userId, isOffer) => {
   let pc = new RTCPeerConnection(ice);
   pcPeers[userId] = pc;
-  pc.addStream(localStream);
+  pc.addStream(localstream);
 
   isOffer &&
     pc
@@ -565,10 +400,10 @@ const createPC = (userId, isOffer) => {
 
   pc.onaddstream = event => {
     const element = document.createElement("video");
-    element.id = `remoteView+${userId}`;
+    element.id = `remoteVideoContainer+${userId}`;
     element.autoplay = "autoplay";
     element.srcObject = event.stream;
-    remoteViewContainer.appendChild(element);
+    remoteVideoContainer.appendChild(element);
   };
 
   pc.oniceconnectionstatechange = event => {
@@ -594,7 +429,10 @@ const exchange = data => {
   }
 
   if (data.candidate) {
-    pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)));
+    pc
+      .addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)))
+      .then(() => console.log("Ice candidate added"))
+      .catch(logError);
   }
 
   if (data.sdp) {
@@ -619,23 +457,33 @@ const exchange = data => {
 };
 
 const broadcastData = data => {
-  $.ajax({
-    url: "sessions",
-    type: "post",
-    data
+  fetch("sessions", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: { "content-type": "application/json" }
   });
 };
 
 const logError = error => console.warn("Whoops! Error:", error);
 ```
 
+### Deployment (Heroku)
 
-## Deployment
+You would deploy this app the same way you would any other Rails app that is using ActionCable. 
 
-Make sure you add the `redis` gem:
+The only caveat is that in order to use `const` and `let` declarations in the Rails asset pipeline, we need to configure the uglifier.
+
+```ruby
+# config/environments/production.rb
+
+config.assets.js_compressor = Uglifier.new(harmony: true)
+```
+
+From here, it's your typical redis stuff:
 
 ```ruby
 #Gemfile
+
 gem 'redis', '~> 3.0'
 ```
 
@@ -668,3 +516,7 @@ $ git add .
 $ git commit -m 'ready to ship'
 $ git push heroku master
 ```
+
+## License
+
+MIT
