@@ -13,6 +13,9 @@ WebRTC is hard enough as it is. You want to implement real-time communication in
 ## Solution
 We can broadcast messages and take care of the signaling handshake 🤝 between peers (aka the WebRTC dance) using Action Cable.
 
+## Known Bugs 🐛
+Right now this example only works in Google Chrome. PR's welcome to get this up and running in FireFox and Safari!
+
 ## DIY Approach
 
 Here, I'll walk you through implementing your own signaling server from scratch. The goal is to package this up as a Ruby gem (coming soon).
