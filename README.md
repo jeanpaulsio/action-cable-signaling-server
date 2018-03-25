@@ -124,6 +124,7 @@ class SessionChannel < ApplicationCable::Channel
   def unsubscribed
     # Any cleanup needed when channel is unsubscribed
   end
+end
 ```
 
 ```ruby
@@ -180,7 +181,13 @@ Once a user connects, we `POST` to sessions an object. Remember, we whitelisted 
 If you take a peek at your running server, you should see something like:
 
 ```
-RECEIVED: {type: "initiateConnection", controller: "sessions", action: "create"}
+[ActionCable] Broadcasting to session_channel: <ActionController::Parameters {"type"=>"initiateConnection"} permitted: true>
+```
+
+If you open up your console via dev tools, you should see this message:
+
+```
+RECEIVED: {type: "initiateConnection"}
 ```
 
 We are seeing this because our received method will log out data that is received from the subscription. If you see that, congrats! You're now able to send and receive data. This is the foundation for the WebRTC dance and is paramount for our signaling serve.
