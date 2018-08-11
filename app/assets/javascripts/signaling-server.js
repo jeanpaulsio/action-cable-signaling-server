@@ -100,7 +100,8 @@ const createPC = (userId, isOffer) => {
     pc
       .createOffer()
       .then(offer => {
-        pc.setLocalDescription(offer);
+        return pc.setLocalDescription(offer);
+      }).then(() => {
         broadcastData({
           type: EXCHANGE,
           from: currentUser,
@@ -164,7 +165,8 @@ const exchange = data => {
       .then(() => {
         if (sdp.type === "offer") {
           pc.createAnswer().then(answer => {
-            pc.setLocalDescription(answer);
+            return pc.setLocalDescription(answer);
+          }).then(()=> {
             broadcastData({
               type: EXCHANGE,
               from: currentUser,
