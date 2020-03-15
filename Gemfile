@@ -13,7 +13,7 @@ gem 'uglifier',     '>= 1.3.0'
 gem 'coffee-rails', '~> 4.2'
 gem 'turbolinks',   '~> 5'
 gem 'jbuilder',     '~> 2.5'
-gem 'rack-cors',    '~> 0.4.1'
+gem 'rack-cors',    '~> 1.0.5'
 gem 'redis',        '~> 3.0'
 
 gem 'figaro',             '~> 1.1', '>= 1.1.1'
