@@ -16,7 +16,7 @@ gem 'rack-cors',    '1.1.1'
 gem 'redis',        '4.1.3'
 gem 'sass-rails',   '~> 5.0'
 gem 'turbolinks',   '~> 5'
-gem 'uglifier',     '>= 1.3.0'
+gem 'uglifier',     '4.2.0'
 
 gem 'figaro',             '1.1.1'
 gem 'json',               '2.3.0'
