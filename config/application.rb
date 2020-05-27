@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative 'boot'
+require_relative "boot"
 
-require 'rails/all'
+require "rails/all"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -15,8 +15,8 @@ module ActionCableSignalingServer
 
     config.middleware.insert_before 0, Rack::Cors do
       allow do
-        origins '*'
-        resource '*', headers: :any, methods: %i[get post options delete]
+        origins "*"
+        resource "*", headers: :any, methods: %i[get post options delete]
       end
     end
 
