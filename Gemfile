@@ -9,7 +9,7 @@ end
 
 ruby '2.6.5'
 
-gem 'rails',        '5.2.4.2'
+gem 'rails',        '6.0.3.1'
 
 gem 'bootsnap',     '1.4.6'
 gem 'jbuilder',     '2.10.0'
@@ -17,9 +17,10 @@ gem 'pg',           '1.2.3'
 gem 'puma',         '4.3.3'
 gem 'rack-cors',    '1.1.1'
 gem 'redis',        '4.1.3'
-gem 'sass-rails',   '~> 5.0'
-gem 'turbolinks',   '~> 5'
+gem 'sass-rails',   '6.0.0'
+gem 'turbolinks',   '5.2.1'
 gem 'uglifier',     '4.2.0'
+gem 'webpacker',    '5.1.1'
 
 gem 'figaro',             '1.1.1'
 gem 'json',               '2.3.0'
