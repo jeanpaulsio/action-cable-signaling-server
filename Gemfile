@@ -21,10 +21,6 @@ gem "sass-rails",   "6.0.0"
 gem "uglifier",     "4.2.0"
 gem "webpacker",    "5.1.1"
 
-gem "figaro",             "1.1.1"
-gem "json",               "2.3.0"
-gem "rest-client",        "2.1.0"
-
 group :development, :test do
   gem "byebug", platforms: %i[mri mingw x64_mingw]
   gem "capybara", "~> 2.13"

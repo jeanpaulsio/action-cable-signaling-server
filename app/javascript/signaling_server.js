@@ -1,3 +1,5 @@
+import consumer from "./channels/consumer";
+
 // Broadcast Types
 const JOIN_ROOM = "JOIN_ROOM";
 const EXCHANGE = "EXCHANGE";
@@ -21,15 +23,24 @@ window.onload = () => {
 // Ice Credentials
 const ice = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
+// Add event listener's to buttons
+document.addEventListener("DOMContentLoaded", () => {
+  const joinButton = document.getElementById("join-button");
+  const leaveButton = document.getElementById("leave-button");
+
+  joinButton.onclick = handleJoinSession;
+  leaveButton.onclick = handleLeaveSession;
+});
+
 // Initialize user's own video
 document.onreadystatechange = () => {
   if (document.readyState === "interactive") {
     navigator.mediaDevices
       .getUserMedia({
         audio: false,
-        video: true
+        video: true,
       })
-      .then(stream => {
+      .then((stream) => {
         localstream = stream;
         localVideo.srcObject = stream;
         localVideo.muted = true;
@@ -39,52 +50,50 @@ document.onreadystatechange = () => {
 };
 
 const handleJoinSession = async () => {
-  App.session = await App.cable.subscriptions.create("SessionChannel", {
+  consumer.subscriptions.create("SessionChannel", {
     connected: () => {
       broadcastData({
         type: JOIN_ROOM,
-        from: currentUser
+        from: currentUser,
       });
     },
-    received: data => {
+    received: (data) => {
       console.log("received", data);
       if (data.from === currentUser) return;
       switch (data.type) {
-        case JOIN_ROOM:
-          return joinRoom(data);
-        case EXCHANGE:
-          if (data.to !== currentUser) return;
-          return exchange(data);
-        case REMOVE_USER:
-          return removeUser(data);
-        default:
-          return;
+      case JOIN_ROOM:
+        return joinRoom(data);
+      case EXCHANGE:
+        if (data.to !== currentUser) return;
+        return exchange(data);
+      case REMOVE_USER:
+        return removeUser(data);
+      default:
+        return;
       }
-    }
+    },
   });
 };
 
 const handleLeaveSession = () => {
-  for (user in pcPeers) {
+  for (let user in pcPeers) {
     pcPeers[user].close();
   }
   pcPeers = {};
-
-  App.session.unsubscribe();
 
   remoteVideoContainer.innerHTML = "";
 
   broadcastData({
     type: REMOVE_USER,
-    from: currentUser
+    from: currentUser,
   });
 };
 
-const joinRoom = data => {
+const joinRoom = (data) => {
   createPC(data.from, true);
 };
 
-const removeUser = data => {
+const removeUser = (data) => {
   console.log("removing user", data.from);
   let video = document.getElementById(`remoteVideoContainer+${data.from}`);
   video && video.remove();
@@ -102,42 +111,43 @@ const createPC = (userId, isOffer) => {
   isOffer &&
     pc
       .createOffer()
-      .then(offer => {
+      .then((offer) => {
         return pc.setLocalDescription(offer);
-      }).then(() => {
+      })
+      .then(() => {
         broadcastData({
           type: EXCHANGE,
           from: currentUser,
           to: userId,
-          sdp: JSON.stringify(pc.localDescription)
+          sdp: JSON.stringify(pc.localDescription),
         });
       })
       .catch(logError);
 
-  pc.onicecandidate = event => {
+  pc.onicecandidate = (event) => {
     event.candidate &&
       broadcastData({
         type: EXCHANGE,
         from: currentUser,
         to: userId,
-        candidate: JSON.stringify(event.candidate)
+        candidate: JSON.stringify(event.candidate),
       });
   };
 
-   pc.ontrack = event => {
-      const element = document.createElement("video");
-      element.id = `remoteVideoContainer+${userId}`;
-      element.autoplay = "autoplay";
-      element.srcObject = event.streams[0];
-      remoteVideoContainer.appendChild(element);
-    };
+  pc.ontrack = (event) => {
+    const element = document.createElement("video");
+    element.id = `remoteVideoContainer+${userId}`;
+    element.autoplay = "autoplay";
+    element.srcObject = event.streams[0];
+    remoteVideoContainer.appendChild(element);
+  };
 
-  pc.oniceconnectionstatechange = event => {
+  pc.oniceconnectionstatechange = () => {
     if (pc.iceConnectionState == "disconnected") {
       console.log("Disconnected:", userId);
       broadcastData({
         type: REMOVE_USER,
-        from: userId
+        from: userId,
       });
     }
   };
@@ -145,7 +155,7 @@ const createPC = (userId, isOffer) => {
   return pc;
 };
 
-const exchange = data => {
+const exchange = (data) => {
   let pc;
 
   if (!pcPeers[data.from]) {
@@ -155,40 +165,40 @@ const exchange = data => {
   }
 
   if (data.candidate) {
-    pc
-      .addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)))
+    pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.candidate)))
       .then(() => console.log("Ice candidate added"))
       .catch(logError);
   }
 
   if (data.sdp) {
-    sdp = JSON.parse(data.sdp);
-    pc
-      .setRemoteDescription(new RTCSessionDescription(sdp))
+    const sdp = JSON.parse(data.sdp);
+    pc.setRemoteDescription(new RTCSessionDescription(sdp))
       .then(() => {
         if (sdp.type === "offer") {
-          pc.createAnswer().then(answer => {
-            return pc.setLocalDescription(answer);
-          }).then(()=> {
-            broadcastData({
-              type: EXCHANGE,
-              from: currentUser,
-              to: data.from,
-              sdp: JSON.stringify(pc.localDescription)
+          pc.createAnswer()
+            .then((answer) => {
+              return pc.setLocalDescription(answer);
+            })
+            .then(() => {
+              broadcastData({
+                type: EXCHANGE,
+                from: currentUser,
+                to: data.from,
+                sdp: JSON.stringify(pc.localDescription),
+              });
             });
-          });
         }
       })
       .catch(logError);
   }
 };
 
-const broadcastData = data => {
+const broadcastData = (data) => {
   fetch("sessions", {
     method: "POST",
     body: JSON.stringify(data),
-    headers: { "content-type": "application/json" }
+    headers: { "content-type": "application/json" },
   });
 };
 
-const logError = error => console.warn("Whoops! Error:", error);
+const logError = (error) => console.warn("Whoops! Error:", error);
