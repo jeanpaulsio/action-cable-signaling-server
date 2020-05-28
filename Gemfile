@@ -18,13 +18,11 @@ gem "puma",         "4.3.3"
 gem "rack-cors",    "1.1.1"
 gem "redis",        "4.1.3"
 gem "sass-rails",   "6.0.0"
-gem "turbolinks",   "5.2.1"
 gem "uglifier",     "4.2.0"
 gem "webpacker",    "5.1.1"
 
 gem "figaro",             "1.1.1"
 gem "json",               "2.3.0"
-gem "rails_real_favicon", "0.1.0"
 gem "rest-client",        "2.1.0"
 
 group :development, :test do
