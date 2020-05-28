@@ -258,7 +258,12 @@ document.onreadystatechange = () => {
   if (document.readyState === "interactive") {
     navigator.mediaDevices
       .getUserMedia({
-        audio: false,
+        /**
+         * If you're testing locally in two separate browser windows, setting audio
+         * to `true` will result in horrible feedback. I'd recommend setting
+         * `audio: false` while you test.
+         */
+        audio: true,
         video: true,
       })
       .then((stream) => {
@@ -366,7 +371,7 @@ document.onreadystatechange = () => {
   if (document.readyState === "interactive") {
     navigator.mediaDevices
       .getUserMedia({
-        audio: false,
+        audio: true,
         video: true,
       })
       .then((stream) => {
