@@ -1,5 +1,19 @@
 {
   "name": "action-cable-signaling-server",
   "private": true,
-  "dependencies": {}
+  "scripts": {
+    "format": "./node_modules/.bin/prettier --write app/javascript/**/*.js",
+    "lint": "./node_modules/.bin/eslint app/javascript",
+    "start": "./bin/webpack-dev-server"
+  },
+  "dependencies": {
+    "@rails/actioncable": "6.0.3-1",
+    "@rails/webpacker": "5.1.1",
+    "prettier": "2.0.5"
+  },
+  "devDependencies": {
+    "babel-eslint": "10.1.0",
+    "eslint": "7.1.0",
+    "webpack-dev-server": "3.11.0"
+  }
 }

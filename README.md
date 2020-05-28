@@ -18,7 +18,7 @@ Right now this example only works in Google Chrome. PR's welcome to get this up 
 
 ## DIY Approach
 
-Here, I'll walk you through implementing your own signaling server from scratch. The goal is to package this up as a Ruby gem (coming soon).
+Here, I'll walk you through implementing your own signaling server from scratch.
 
 In this example, we'll make a video chat app. However, WebRTC can do more than that! Once your signaling server is set up, it's possible to extend your app to support other cool stuff like screen sharing.
 
