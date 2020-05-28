@@ -8,6 +8,6 @@ class SessionsController < ApplicationController
 
   private
     def session_params
-      params.permit(:type, :from, :to, :sdp, :candidate)
+      params.require(:session).permit(:type, :from, :to, :sdp, :candidate)
     end
 end
