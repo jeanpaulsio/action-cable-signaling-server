@@ -102,6 +102,11 @@ const removeUser = (data) => {
 
 const createPC = (userId, isOffer) => {
   let pc = new RTCPeerConnection(ice);
+  const element = document.createElement("video");
+  element.id = `remoteVideoContainer+${userId}`;
+  element.autoplay = "autoplay";
+  remoteVideoContainer.appendChild(element);
+
   pcPeers[userId] = pc;
 
   for (const track of localstream.getTracks()) {
@@ -135,11 +140,12 @@ const createPC = (userId, isOffer) => {
   };
 
   pc.ontrack = (event) => {
-    const element = document.createElement("video");
-    element.id = `remoteVideoContainer+${userId}`;
-    element.autoplay = "autoplay";
-    element.srcObject = event.streams[0];
-    remoteVideoContainer.appendChild(element);
+    if (event.streams && event.streams[0]) {
+      element.srcObject = event.streams[0];
+    } else {
+      let inboundStream = new MediaStream(event.track);
+      element.srcObject = inboundStream;
+    }
   };
 
   pc.oniceconnectionstatechange = () => {
